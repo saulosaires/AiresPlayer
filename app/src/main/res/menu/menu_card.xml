@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/reproduce_next" android:orderInCategory="1" android:title="@string/reproduce"/>
+    <item android:id="@+id/add_queue"      android:orderInCategory="1" android:title="@string/add_queue"/>
+    <item android:id="@+id/add_playlist"   android:orderInCategory="1" android:title="@string/add_playlist"/>
+    <item android:id="@+id/edit_tag"       android:orderInCategory="1" android:title="@string/edit_tag"/>
+    <item android:id="@+id/delete"        android:orderInCategory="1" android:title="@string/delete_media"/>
+
+
+</menu>

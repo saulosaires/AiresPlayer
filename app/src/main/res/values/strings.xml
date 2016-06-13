@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">AiresPlayer</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="music">Música</string>
+    <string name="musics">Músicas</string>
+    <string name="album">Álbum</string>
+    <string name="albuns">Álbuns</string>
+    <string name="artist">Artistas</string>
+
+    <string name="reproduce">Reproduzir à seguir</string>
+    <string name="add_queue">Adicionar à fila</string>
+    <string name="add_playlist">Adicionar à playlist</string>
+    <string name="edit_tag">Editar Tags</string>
+    <string name="tag_editor">Tag Editor</string>
+    <string name="details">Detalhes</string>
+    <string name="delete">Delete</string>
+    <string name="delete_media">Delete Media</string>
+
+
+    <string name="name">Name</string>
+    <string name="genre">Genre</string>
+    <string name="year">Year</string>
+    <string name="track">Track</string>
+
+</resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+
+    <RelativeLayout
+
+        android:id="@+id/warper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/album_art"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentLeft="true"
+            android:layout_margin="16dp"
+            android:layout_centerVertical="true"
+            android:scaleType="fitXY"
+            android:background="@color/background_image"
+            android:src="@drawable/ic_music_note_white_24dp"/>
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/album_art"
+            android:layout_toLeftOf="@+id/more"
+            android:paddingTop="20dp"
+            android:text="title"
+            android:textStyle="bold"
+            android:lines="1"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title"
+            android:lines="1"
+            android:layout_toRightOf="@+id/album_art"
+            android:layout_toLeftOf="@+id/more"
+            android:paddingBottom="20dp"
+            android:text="subtitle"
+            android:textSize="14sp"/>
+
+        <ImageView
+            android:id="@+id/more"
+            android:layout_width="40dp"
+            android:layout_height="25dp"
+            android:layout_alignParentRight="true"
+            android:layout_margin="16dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/more_vert_grey600"/>
+
+    </RelativeLayout>
+
+</FrameLayout>
