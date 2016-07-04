@@ -1,13 +1,25 @@
 package com.airesplayer;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 
+import android.provider.MediaStore;
+import android.widget.RemoteViews;
+
 import com.airesplayer.fragment.ItemListTwoLines;
 import com.airesplayer.util.AudioUtils;
+import com.airesplayer.util.Utils;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,7 +31,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String ACTION_INIT           = "action.CONTINUE";
     public static final String ACTION_COMPLETE       = "action.COMPLETE";
     public static final String ACTION_PREPARED       = "action.PREPARED";
-    public static final String ACTION_CHANGE_CENTRAL = "action.CHANGE_CENTRAL";
+
     public static final String ACTION_SELECTED       = "action.SELECTED";
 
     public static final String PANEL_STATE_COLLAPSED = "action.COLLAPSED";
@@ -51,7 +63,16 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public IBinder onBind(Intent intent) {
-        //TODO for communication return IBinder implementation
+
+        IntentFilter intentFilter = new IntentFilter();
+
+        intentFilter.addAction(ACTION_PLAY_NOTI);
+        intentFilter.addAction(ACTION_NEXT_NOTI);
+        intentFilter.addAction(ACTION_PREV_NOTI);
+        intentFilter.addAction(ACTION_CLOSE_NOTI);
+        registerReceiver(new NotificationReceiver(), intentFilter);
+
+
         return mBinder;
     }
 
@@ -88,7 +109,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         if(list!=null && list.size()>0) {
             sendMessenge(ACTION_INIT, list.get(currentIndex).getId() + "");
-            sendMessenge(ACTION_CHANGE_CENTRAL, list.get(currentIndex).getId() + "");
+            showNotification(list.get(currentIndex).getId());
+            //sendMessenge(ACTION_CHANGE_CENTRAL, list.get(currentIndex).getId() + "");
         }
     }
 
@@ -112,7 +134,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     public void play(int index, String type) {
-
 
             init(index,type);
 
@@ -143,10 +164,10 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             sendMessenge(ACTION_PLAY,null);
             sendMessenge(ACTION_INIT,list.get(currentIndex).getId()+"");
             sendMessenge(ACTION_SELECTED,null);
-
+          //  sendMessenge(ACTION_CHANGE_CENTRAL,list.get(currentIndex).getId()+"");
 
         } catch (IOException e) {
-            //Log.e(TAG, "Could not open file " + audioFile + " for playback.", e);
+
             e.printStackTrace();
         }
 
@@ -156,9 +177,10 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         if(list==null || list.size()==0)return;
 
-        int size = list.size();
+        int size = list.size()-1;
+        currentIndex++;
 
-        currentIndex=(++currentIndex)%size;
+        currentIndex = (size+currentIndex) % size;
 
         int id = list.get(currentIndex).getId();
 
@@ -171,9 +193,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         if(list==null || list.size()==0)return;
 
-        int size = list.size();
+        int size = list.size()-1;
+        currentIndex--;
 
-        currentIndex=(--currentIndex)%size;
+        currentIndex = (size+currentIndex) % size;
+
 
         int id = list.get(currentIndex).getId();
 
@@ -205,10 +229,15 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     public void seekTo(int i) {
-        mediaPlayer.seekTo(i);
+
+        if(mediaPlayer!=null)
+            mediaPlayer.seekTo(i);
     }
 
     public int getDuration() {
+
+        if(mediaPlayer==null)return 0;
+
         return mediaPlayer.getDuration();
     }
 
@@ -220,6 +249,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     public int getCurrentPosition() {
+
+        if(mediaPlayer==null)return 0;
+
         return mediaPlayer.getCurrentPosition();
     }
 
@@ -312,15 +344,114 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
          list.add(item);
     }
 
-    public int getCurrentIndex(){
-        return currentIndex;
+    public int getCurrentId(){
+        return list.get(currentIndex).getId();
     }
 
     public void sendMessenge(String action, String data){
 
-        Util.sendMessenge(this, action,  data);
+        Utils.sendMessenge(this, action,  data);
+
+    }
+
+    private final String ACTION_PLAY_NOTI="ACTION_PLAY_NOTI";
+    private final String ACTION_NEXT_NOTI="ACTION_PLAY_NEXT";
+    private final String ACTION_PREV_NOTI="ACTION_PLAY_PREV";
+    private final String ACTION_CLOSE_NOTI="ACTION_PLAY_CLOSE";
+
+    private void showNotification(int id) {
+
+        com.airesplayer.model.Media media = AudioUtils.getMedia(this, id);
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,   PendingIntent.FLAG_UPDATE_CURRENT);
+        RemoteViews views = new RemoteViews(this.getPackageName(), R.layout.status_bar_expanded);
+
+        if(Utils.uriExist(this,media.getAlbumArt())) {
+
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(media.getAlbumArt()));
+                views.setImageViewBitmap(R.id.status_bar_album_art,bitmap );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setAction("ACTION.MAIN_ACTION");
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        Intent play = new Intent();
+        play.setAction(ACTION_PLAY_NOTI);
+        PendingIntent pendingPlayIntent = PendingIntent.getBroadcast(this, 100, play, 0);
+
+        Intent prev = new Intent();
+        prev.setAction(ACTION_PREV_NOTI);
+        PendingIntent pendingPrevIntent = PendingIntent.getBroadcast(this, 101, prev, 0);
+
+        Intent next = new Intent();
+        next.setAction(ACTION_NEXT_NOTI);
+        PendingIntent pendingNextIntent = PendingIntent.getBroadcast(this, 102, next, 0);
+
+        Intent close = new Intent();
+        next.setAction(ACTION_CLOSE_NOTI);
+        PendingIntent pendingCloseIntent = PendingIntent.getBroadcast(this, 103, close, 0);
+
+        if(isPlaying()){
+            views.setImageViewResource(R.id.status_bar_play,R.drawable.ic_pause_white_36dp);
+        }else{
+            views.setImageViewResource(R.id.status_bar_play,R.drawable.ic_play_arrow_white_36dp);
+        }
+
+        views.setOnClickPendingIntent(R.id.status_bar_play, pendingPlayIntent);
+        views.setOnClickPendingIntent(R.id.status_bar_next, pendingNextIntent);
+        views.setOnClickPendingIntent(R.id.status_bar_prev, pendingPrevIntent);
+        views.setOnClickPendingIntent(R.id.close, pendingCloseIntent);
+
+        views.setTextViewText(R.id.status_bar_track_name, media.getTitle());
+        views.setTextViewText(R.id.status_bar_artist_name, media.getArtist());
+
+
+        Notification.Builder mNotifyBuilder = new Notification.Builder(this);
+        Notification foregroundNote = mNotifyBuilder.setContentTitle(media.getArtist())
+                .setContentText(media.getTitle())
+                .setContentIntent(pendingIntent)
+                .setSmallIcon(R.drawable.ic_album_black_36dp)
+                .build();
+
+        foregroundNote.bigContentView = views;
+
+        NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        mNotifyManager.notify(1, foregroundNote);
+
 
     }
 
 
+    private class NotificationReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String action = intent.getAction();
+
+            if(action.equals(ACTION_PLAY_NOTI)){
+                doContinue();
+
+            }else if(action.equals(ACTION_NEXT_NOTI)){
+                doForward();
+
+            }else if(action.equals(ACTION_PREV_NOTI)){
+                doRewind();
+
+            }else if(action.equals(ACTION_CLOSE_NOTI)){
+
+            }
+            showNotification(list.get(currentIndex).getId());
+        }
+
+    }
 }

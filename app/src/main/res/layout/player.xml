@@ -9,6 +9,7 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:id="@+id/top_info"
+
         android:layout_height="wrap_content">
 
         <RelativeLayout
@@ -23,8 +24,8 @@
                 android:layout_alignParentLeft="true"
                 android:layout_margin="16dp"
                 android:layout_centerVertical="true"
-                android:scaleType="center"
-                android:background="@color/background_image"
+                android:scaleType="fitXY"
+                android:background="@color/accent_dark"
                 android:src="@drawable/ic_music_note_white_24dp"/>
 
             <TextView
@@ -69,6 +70,7 @@
         android:layout_height="80dp"
         android:id="@+id/warpper_player"
         android:layout_alignParentBottom="true"
+        app:cardBackgroundColor="@color/colorPrimary"
         android:layout_alignParentStart="true">
 
         <LinearLayout
@@ -87,6 +89,7 @@
                         android:layout_width="wrap_content"
                         android:gravity="center_horizontal"
                         android:padding="4dp"
+                        android:textColor="@android:color/white"
                         android:layout_height="wrap_content"
                         android:layout_gravity="left"
                         android:textStyle="bold"
@@ -102,6 +105,7 @@
                         android:padding="4dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
+                        android:textColor="@android:color/white"
                         android:textStyle="bold"
                         android:text="00:00"
                         android:textSize="12dp"
@@ -127,7 +131,7 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/rewind"
                     android:scaleType="center"
-                    android:src="@drawable/ic_skip_previous_black_36dp"
+                    android:src="@drawable/ic_skip_previous_white_36dp"
                     android:background="@android:color/transparent"
                     android:layout_gravity="center|center_horizontal"/>
 
@@ -139,7 +143,7 @@
                     android:src="@drawable/ic_play_arrow_white_36dp"
                     android:layout_marginLeft="32dp"
                     android:layout_marginRight="32dp"
-                    app:backgroundTint="@color/colorPrimary"
+                    app:backgroundTint="@color/accent_dark"
                     android:elevation="4dp"
 
                     android:layout_gravity="center|center_horizontal"/>
@@ -149,7 +153,7 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/forward"
                     android:scaleType="center"
-                    android:src="@drawable/ic_skip_next_black_36dp"
+                    android:src="@drawable/ic_skip_next_white_36dp"
                     android:background="@android:color/transparent"
                     android:layout_gravity="center|center_horizontal"/>
 
@@ -166,7 +170,7 @@
         android:layout_below="@id/top_info"
         android:layout_above="@id/warpper_player"
         android:id="@+id/central"
-        android:background="@color/background_image"/>
+        android:background="@android:color/white"/>
 
 
 

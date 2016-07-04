@@ -33,7 +33,7 @@ public class AudioUtils {
                 null,
                 MediaStore.Audio.Media.IS_MUSIC+"=1",
                 null,
-                MediaStore.Audio.Media.TITLE + " ASC");
+                MediaStore.Audio.Media.ARTIST+" ASC, "+MediaStore.Audio.Media.TITLE + " ASC");
 
         return parseMedia(context,cursor);
 

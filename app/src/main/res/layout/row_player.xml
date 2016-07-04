@@ -8,7 +8,8 @@
 
         android:id="@+id/warper"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@android:color/white">
 
         <ImageView
             android:id="@+id/album_art"
@@ -18,7 +19,7 @@
             android:layout_margin="16dp"
             android:layout_centerVertical="true"
             android:scaleType="fitXY"
-            android:background="@color/background_image"
+            android:background="@color/accent_dark"
             android:src="@drawable/ic_music_note_white_24dp"/>
 
         <TextView
@@ -31,7 +32,8 @@
             android:text="title"
             android:textStyle="bold"
             android:lines="1"
-            android:textSize="16sp"/>
+            android:textSize="16sp"
+            android:textColor="@android:color/black"/>
 
         <TextView
             android:id="@+id/subtitle"
@@ -43,16 +45,9 @@
             android:layout_toLeftOf="@+id/more"
             android:paddingBottom="20dp"
             android:text="subtitle"
-            android:textSize="14sp"/>
+            android:textSize="14sp"
+            android:textColor="@android:color/black"/>
 
-        <ImageView
-            android:id="@+id/more"
-            android:layout_width="40dp"
-            android:layout_height="25dp"
-            android:layout_alignParentRight="true"
-            android:layout_margin="16dp"
-            android:layout_centerVertical="true"
-            android:src="@drawable/more_vert_grey600"/>
 
     </RelativeLayout>
 

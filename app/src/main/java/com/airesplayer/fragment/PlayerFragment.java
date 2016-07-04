@@ -14,6 +14,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewAnimationUtils;
@@ -30,7 +31,7 @@ import com.airesplayer.AiresPlayerApp;
 import com.airesplayer.MainActivity;
 import com.airesplayer.PlayerService;
 import com.airesplayer.R;
-import com.airesplayer.Util;
+
 import com.airesplayer.dao.ImageDAO;
 import com.airesplayer.model.Image;
 import com.airesplayer.model.Media;
@@ -43,6 +44,7 @@ import java.io.File;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by saulo on 22/04/2016.
@@ -69,8 +71,8 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
         @Override
         public void run() {
 
-            played.setText(Util.humanReadableTime(app.getService().getCurrentPosition()));
-            left.setText(Util.humanReadableTime(app.getService().getDuration()- app.getService().getCurrentPosition()));
+            played.setText(Utils.humanReadableTime(app.getService().getCurrentPosition()));
+            left.setText(Utils.humanReadableTime(app.getService().getDuration()- app.getService().getCurrentPosition()));
 
             seek.setProgress(app.getService().getCurrentPosition());
 
@@ -107,6 +109,7 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
     }
 
+
     public void initReceiver(){
 
         IntentFilter intentFilter = new IntentFilter();
@@ -115,21 +118,31 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
         intentFilter.addAction(PlayerService.ACTION_INIT);
         intentFilter.addAction(PlayerService.ACTION_COMPLETE);
         intentFilter.addAction(PlayerService.ACTION_PREPARED);
-        intentFilter.addAction(PlayerService.ACTION_CHANGE_CENTRAL);
         intentFilter.addAction(PlayerService.PANEL_STATE_EXPANDED);
         intentFilter.addAction(PlayerService.PANEL_STATE_COLLAPSED);
+        intentFilter.addAction(PlayerService.ACTION_SELECTED);
         getActivity().registerReceiver(new ServiceReceiver(), intentFilter);
 
     }
 
-    public void initCentralImg(String img){
+    public void initCentralImg(Integer id,String img,boolean animation) {
 
-        centralCover=img;
+        if (getSlideState() == SlidingUpPanelLayout.PanelState.COLLAPSED) {
+            playQueue.setImageResource(R.drawable.ic_play_arrow_black_36dp);
+        } else {
+            playQueue.setImageResource(R.drawable.ic_album_black_36dp);
+        }
+
+        if(img!=null && Utils.uriExist(getContext(),img))
+             centralCover = img;
+        else
+            centralCover = findLocalImg(id);
 
         final ImageView iv = new ImageView(getContext());
 
         iv.setScaleType(ImageView.ScaleType.CENTER);
         iv.setBackgroundResource(R.drawable.ic_music_note_white_48dp);
+        central.setBackgroundColor(ContextCompat.getColor(getActivity(),R.color.accent_light));
 
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -137,9 +150,7 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
         layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
 
-
-
-        if(centralCover!=null ) {
+        if (centralCover != null) {
 
             iv.setScaleType(ImageView.ScaleType.FIT_XY);
 
@@ -153,46 +164,57 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
                     .placeholder(R.drawable.ic_music_note_white_48dp)
                     .into(iv);
 
+        }else{
+            layoutParams.height=150;
+            layoutParams.width=150;
+
         }
-
-
 
         iv.setLayoutParams(layoutParams);
 
-        iv.post(new Runnable() {
-            @Override
-            public void run() {
+        if (!animation) {
+            central.addView(iv);
+        } else {
 
-                if(queueFragment!=null) {
+            iv.post(new Runnable() {
+                @Override
+                public void run() {
 
-                    int cx=(int)(central.getX() + central.getWidth()  / 2);
-                    int cy=(int)(central.getY() + central.getHeight() / 2);
+                    if(queueFragment!=null) {
 
-                    Animator unreveal = queueFragment.prepareUnrevealAnimator(cx, cy);
-                    unreveal.start();
-                    unreveal.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            super.onAnimationEnd(animation);
-                            central.removeAllViews();
-                            central.addView(iv);
-                        }
-                    });
+                        int cx=(int)(central.getX() + central.getWidth()  / 2);
+                        int cy=(int)(central.getY() + central.getHeight() / 2);
 
-                }else{
-                    central.removeAllViews();
-                    central.addView(iv);
+                            Animator unreveal = queueFragment.prepareUnrevealAnimator(cx, cy);
+                            unreveal.start();
+                            unreveal.addListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    super.onAnimationEnd(animation);
+                                    central.removeAllViews();
+                                    central.addView(iv);
+                                }
+                            });
+
+
+                    }else{
+                        central.removeAllViews();
+                        central.addView(iv);
+                    }
+
                 }
+            });
 
-            }
-        });
-
+         }
 
     }
 
     public void initCentralList(List<ItemListTwoLines> list){
 
         if(list==null) return;
+
+        playQueue.setImageResource(R.drawable.ic_queue_music_black_36dp);
+
 
         central.removeAllViews();
 
@@ -205,7 +227,6 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
 
     }
-
 
     public void init(){
 
@@ -238,7 +259,7 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
         initReceiver();
 
-        initCentralImg(centralCover);
+        initCentralImg(null,centralCover,false);
 
 
 
@@ -289,7 +310,7 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
     public void doPlayPause(){
 
-            app.getService().doContinue();
+      app.getService().doContinue();
 
     }
 
@@ -309,11 +330,11 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
         subtitle.setText(media.getArtist());
 
         if(media.getArtAlbum()!=null && !"".equals(media.getArtAlbum())){
-
-            Util.loadImage(getActivity(),media.getAlbumArt(),albumArtUp);
+            Utils.loadImage(getActivity(),media.getAlbumArt(),albumArtUp);
 
         }
 
+        initCentralImg(media.getArtistId(),media.getArtAlbum(),false);
     }
 
     public void stopUpdate(){
@@ -336,18 +357,12 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
         String status = (String) central.getTag();
 
         if(status==null || "COVER".equals(status)){
-
-            playQueue.setImageResource(R.drawable.ic_queue_music_grey_24dp);
             central.setTag("LIST");
             initCentralList(app.getService().getPlayList());
 
-
         }else{
-
-            playQueue.setImageResource(R.drawable.ic_queue_music_black_24dp);
             central.setTag("COVER");
-            initCentralImg(centralCover);
-
+            initCentralImg(null,centralCover,true);
 
         }
 
@@ -361,10 +376,10 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
             String status = (String) central.getTag();
 
             if(status==null || "COVER".equals(status)){
-                playQueue.setImageResource(R.drawable.ic_queue_music_black_24dp);
+                playQueue.setImageResource(R.drawable.ic_album_black_36dp);
 
             }else{
-                playQueue.setImageResource(R.drawable.ic_queue_music_grey_24dp);
+                playQueue.setImageResource(R.drawable.ic_queue_music_black_36dp);
 
             }
 
@@ -378,6 +393,19 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
 
         }
+
+    }
+
+    private String findLocalImg(Integer id){
+
+        if(id==null)return null;
+
+        List<Image> list = new ImageDAO(getContext()).read(id);
+
+        if (list != null && list.size() > 0)
+            return  list.get(0).getUrl();
+        else
+           return null;
 
     }
 
@@ -423,32 +451,14 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
                 seek.setMax(Integer.parseInt(duration));
 
             }else if(action.equals(PlayerService.PANEL_STATE_COLLAPSED) ||
-                    action.equals(PlayerService.PANEL_STATE_EXPANDED)){
+                     action.equals(PlayerService.PANEL_STATE_EXPANDED)){
 
                 initPlayQueue();
 
-            }else if(action.equals(PlayerService.ACTION_CHANGE_CENTRAL)){
+            }else if (action.equals(PlayerService.ACTION_SELECTED)) {
 
-                String id= intent.getStringExtra("DATA");
-
-                Media m = AudioUtils.getMedia(getContext(),Integer.parseInt(id));
-
-                if(Utils.uriExist(getContext(),m.getAlbumArt())){
-
-                    initCentralImg(m.getAlbumArt());
-
-                }else{
-
-                    List<Image> list = new ImageDAO(getContext()).read(Integer.parseInt(id));
-
-                    if (list != null && list.size() > 0)
-                        initCentralImg( list.get(0).getUrl());
-                    else
-                        initCentralImg(centralCover);
-
-
-                }
-
+                if(queueFragment!=null)
+                   queueFragment.update();
 
             }
 

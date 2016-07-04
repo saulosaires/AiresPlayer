@@ -7,8 +7,8 @@ android {
         applicationId "com.airesplayer"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "1.2"
     }
     buildTypes {
         release {
@@ -31,4 +31,5 @@ dependencies {
     compile 'com.mcxiaoke.volley:library:1.0.16'
     compile 'com.sothree.slidinguppanel:library:3.3.0'
     compile 'com.google.android.gms:play-services-appindexing:8.1.0'
+
 }

@@ -24,7 +24,7 @@ import com.airesplayer.EditTagActivity;
 import com.airesplayer.Media;
 import com.airesplayer.PlayerService;
 import com.airesplayer.R;
-import com.airesplayer.Util;
+
 import com.airesplayer.util.AudioUtils;
 import com.airesplayer.util.Utils;
 import com.squareup.picasso.Picasso;
@@ -165,7 +165,6 @@ public class MusicFragment extends Fragment {
                        .load((e.getArtAlbum()))
                        .placeholder(R.drawable.ic_music_note_white_24dp)
                        .into(viewHolder.albumArt);
-
 
             }
 

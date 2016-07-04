@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
@@ -21,9 +23,12 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.airesplayer.AiresPlayerApp;
+import com.airesplayer.Media;
 import com.airesplayer.PlayerService;
 import com.airesplayer.R;
 
@@ -39,8 +44,6 @@ public class QueueFragment extends Fragment  {
 
 
     private List<ItemListTwoLines> listEntity;
-
-    LinearLayoutManager linear;
 
     public static QueueFragment newInstance(List<ItemListTwoLines> listEntity,int centerX, int centerY) {
         QueueFragment fragment = new QueueFragment();
@@ -63,21 +66,20 @@ public class QueueFragment extends Fragment  {
 
     public QueueFragment() {}
 
-
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,Bundle savedInstanceState) {
+
         View rootView = inflater.inflate(R.layout.fragment_queue_list, container, false);
 
         rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop,
-                                       int oldRight, int oldBottom) {
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
+                                       int oldTop,int oldRight, int oldBottom) {
+
                 v.removeOnLayoutChangeListener(this);
                 int cx = getArguments().getInt("cx");
                 int cy = getArguments().getInt("cy");
 
-                // get the hypothenuse so the radius is from one corner to the other
                 int radius = (int) Math.hypot(right, bottom);
 
                 Animator reveal = ViewAnimationUtils.createCircularReveal(v, cx, cy, 0, radius);
@@ -136,53 +138,41 @@ public class QueueFragment extends Fragment  {
 
         initList(view);
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(PlayerService.ACTION_SELECTED);
-
-        getActivity().registerReceiver(new ServiceReceiver(), intentFilter);
-
     }
 
-    private void initList(View view){
+    public void initList(View view){
+
+        if(view==null)view= getView();
 
         RecyclerView mRecyclerView = (RecyclerView)view.findViewById(R.id.list);
         LinearLayoutManager linear=new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(linear);
         mRecyclerView.setHasFixedSize(false);
         mRecyclerView.setAdapter(new ListAdapter(listEntity));
-
+         
 
     }
+    public void update(){
 
-    private class ServiceReceiver extends BroadcastReceiver {
+        RecyclerView mRecyclerView = (RecyclerView)getView().findViewById(R.id.list);
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
+        RecyclerView.Adapter adapter = mRecyclerView.getAdapter();
 
-            String action = intent.getAction();
-
-            if (action.equals(PlayerService.ACTION_SELECTED)) {
-
-                initList(getView());
-
-            }
-        }
-
+        adapter.notifyItemRangeChanged(0, adapter.getItemCount());
     }
 
     public class ListAdapter extends RecyclerView.Adapter<ViewHolder>  {
 
         private List<ItemListTwoLines> listEntity;
-        private int current=0;
-
+        AiresPlayerApp app;
         public ListAdapter(List<ItemListTwoLines> listEntity) {
             super();
             this.listEntity=listEntity;
-            AiresPlayerApp app = (AiresPlayerApp) getActivity().getApplication();
 
-            current = app.getService().getCurrentIndex();
+            app = (AiresPlayerApp) getActivity().getApplication();
+
+
         }
-
 
 
         @Override
@@ -198,11 +188,11 @@ public class QueueFragment extends Fragment  {
         public void onBindViewHolder( ViewHolder viewHolder,  final int i) {
             final ItemListTwoLines e = listEntity.get(i);
 
+
             if(e.getArtAlbum()!=null && !"".equals(e.getArtAlbum())){
 
-
                 Picasso.with(getActivity())
-                       .load(new File(e.getArtAlbum()))
+                       .load(e.getArtAlbum())
                        .placeholder(R.drawable.ic_music_note_white_24dp)
                        .into(viewHolder.albumArt);
 
@@ -211,12 +201,49 @@ public class QueueFragment extends Fragment  {
             viewHolder.title.setText(e.getTitle());
             viewHolder.subtitle.setText(e.getSubTitle());
 
-            if(i==current){
-                viewHolder.warper.setBackgroundColor(getResources().getColor(R.color.yellow));
+            if(e.getId()==app.getService().getCurrentId()){
+                viewHolder.warper.setBackgroundColor(ContextCompat.getColor(getActivity(),R.color.selected));
+                viewHolder.title.setTextColor(ContextCompat.getColor(getActivity(),android.R.color.white));
+                viewHolder.subtitle.setTextColor(ContextCompat.getColor(getActivity(),android.R.color.white));
             }
+
+
+            viewHolder.title.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    handleClick(i);
+                }
+            });
+
+            viewHolder.subtitle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    handleClick(i);
+
+                }
+            });
+
+            viewHolder.warper.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    handleClick(i);
+                }
+            });
+
+
 
         }
 
+        @Override
+        public void onViewRecycled(ViewHolder viewHolder) {
+
+            super.onViewRecycled(viewHolder);
+            viewHolder.warper.setBackgroundColor(ContextCompat.getColor(getActivity(),android.R.color.white));
+            viewHolder.title.setTextColor(ContextCompat.getColor(getActivity(),android.R.color.black));
+            viewHolder.subtitle.setTextColor(ContextCompat.getColor(getActivity(),android.R.color.black));
+
+        }
 
         @Override
         public int getItemCount() {
@@ -227,9 +254,14 @@ public class QueueFragment extends Fragment  {
             return 0;
         }
 
+        public void handleClick(int index) {
 
+            ((AiresPlayerApp)getActivity().getApplication()).getService().play(index, Media.MUSIC.getTypeMedia());
 
         }
+
+
+    }
 
         class ViewHolder extends RecyclerView.ViewHolder{
 

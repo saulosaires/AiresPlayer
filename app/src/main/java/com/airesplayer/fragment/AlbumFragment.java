@@ -24,7 +24,7 @@ import android.widget.TextView;
 import com.airesplayer.AiresPlayerApp;
 import com.airesplayer.Media;
 import com.airesplayer.R;
-import com.airesplayer.Util;
+
 import com.airesplayer.util.Utils;
 import com.squareup.picasso.Picasso;
 
@@ -35,15 +35,11 @@ import java.util.Random;
 
 public class AlbumFragment extends Fragment {
 
-    private static final String BUNDLE_RECYCLER_LAYOUT = "recycler.layout";
-
     private RecyclerView mRecyclerView;
 
     private List<ItemListTwoLines> listEntity;
 
-
     public static AlbumFragment newInstance(List<ItemListTwoLines> listEntity) {
-
 
         AlbumFragment fragment = new AlbumFragment();
         fragment.init(listEntity);
@@ -62,21 +58,10 @@ public class AlbumFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-
-        }
-
-
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         setRetainInstance(true);
         return inflater.inflate(R.layout.fragment_list, container, false);
-
 
     }
 
@@ -84,13 +69,9 @@ public class AlbumFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
 
         mRecyclerView = (RecyclerView)view.findViewById(R.id.list);
-
-
         mRecyclerView.setLayoutManager(getGridLayoutManager());
         mRecyclerView.setHasFixedSize(false);
         mRecyclerView.setAdapter(new AlbumAdapter(listEntity));
-
-
 
     }
 
@@ -145,32 +126,34 @@ public class AlbumFragment extends Fragment {
 
             if(e.getArtAlbum()!=null && !"".equals(e.getArtAlbum())){
 
-                viewHolder.albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
+
 
                 Picasso.with(getActivity())
                         .load(new File(e.getArtAlbum()))
                         .placeholder(R.drawable.ic_music_note_white_48dp)
                         .into(viewHolder.albumArt,
                                 new com.squareup.picasso.Callback() {
+
                                     @Override
                                     public void onSuccess() {
 
+                                       viewHolder.albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
 
-                               Bitmap bitmap =  ((BitmapDrawable)viewHolder.albumArt.getDrawable()).getBitmap();
+                                       Bitmap bitmap =  ((BitmapDrawable)viewHolder.albumArt.getDrawable()).getBitmap();
 
-                                Palette palette  = Palette.from(bitmap).generate();
-                                Palette.Swatch swatch = palette.getVibrantSwatch();
+                                        Palette palette  = Palette.from(bitmap).generate();
+                                        Palette.Swatch swatch = palette.getVibrantSwatch();
 
-                                if (swatch != null) {
-                                    viewHolder.warpper.setBackgroundColor(swatch.getRgb());
+                                        if (swatch != null) {
+                                            viewHolder.warpper.setBackgroundColor(swatch.getRgb());
 
-                                    //viewHolder.title.setBackgroundColor(swatch.getRgb());
-                                    viewHolder.title.setTextColor(swatch.getTitleTextColor());
+                                            //viewHolder.title.setBackgroundColor(swatch.getRgb());
+                                            viewHolder.title.setTextColor(swatch.getTitleTextColor());
 
-                                    //viewHolder.subtitle.setBackgroundColor(swatch.getRgb());
-                                    viewHolder.subtitle.setTextColor(swatch.getTitleTextColor());
+                                            //viewHolder.subtitle.setBackgroundColor(swatch.getRgb());
+                                            viewHolder.subtitle.setTextColor(swatch.getTitleTextColor());
 
-                                }
+                                        }
 
                                     }
 

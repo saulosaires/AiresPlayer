@@ -22,7 +22,7 @@
             android:layout_width="200dp"
             android:scaleType="center"
             android:layout_height="150dp"
-            android:background="@color/background_image"
+            android:background="@color/accent_dark"
             android:src="@drawable/ic_music_note_white_48dp"/>
 
         <LinearLayout
