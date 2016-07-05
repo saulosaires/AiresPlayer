@@ -62,6 +62,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        cancelNotification();
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
 
         IntentFilter intentFilter = new IntentFilter();
@@ -435,6 +442,12 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     }
 
+    public void cancelNotification(){
+
+        NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotifyManager.cancel(1);
+
+    }
 
     private class NotificationReceiver extends BroadcastReceiver {
 
@@ -445,17 +458,17 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
             if(action.equals(ACTION_PLAY_NOTI)){
                 doContinue();
-
+                showNotification(list.get(currentIndex).getId());
             }else if(action.equals(ACTION_NEXT_NOTI)){
                 doForward();
-
+                showNotification(list.get(currentIndex).getId());
             }else if(action.equals(ACTION_PREV_NOTI)){
                 doRewind();
-
+                showNotification(list.get(currentIndex).getId());
             }else if(action.equals(ACTION_CLOSE_NOTI)){
-
+                cancelNotification();
             }
-            showNotification(list.get(currentIndex).getId());
+
         }
 
     }

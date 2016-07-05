@@ -89,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements SlidingUpPanelLay
 
     }
 
+
+
     @Override
     public void onPanelSlide(View panel, float slideOffset) {
 
