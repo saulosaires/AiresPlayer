@@ -173,6 +173,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     }
 
+    public int getIndex(int i,int size){
+
+        return (size+i) % size;
+    }
+
     public void doForward(){
 
         if(list==null || list.size()==0)return;
@@ -180,7 +185,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         int size = list.size()-1;
         currentIndex++;
 
-        currentIndex = (size+currentIndex) % size;
+        currentIndex = getIndex(currentIndex,size);
 
         int id = list.get(currentIndex).getId();
 
@@ -196,7 +201,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         int size = list.size()-1;
         currentIndex--;
 
-        currentIndex = (size+currentIndex) % size;
+        currentIndex = getIndex(currentIndex,size);
 
 
         int id = list.get(currentIndex).getId();

@@ -303,6 +303,7 @@ public class PlayerFragment  extends Fragment implements  View.OnClickListener, 
 
         }else{
             app.getService().doContinue();
+            initPlayQueue();
         }
 
 
