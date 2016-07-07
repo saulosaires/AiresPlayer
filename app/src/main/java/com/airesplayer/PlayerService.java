@@ -369,7 +369,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private final String ACTION_PLAY_NOTI="ACTION_PLAY_NOTI";
     private final String ACTION_NEXT_NOTI="ACTION_PLAY_NEXT";
     private final String ACTION_PREV_NOTI="ACTION_PLAY_PREV";
-    private final String ACTION_CLOSE_NOTI="ACTION_PLAY_CLOSE";
+    private final String ACTION_CLOSE_NOTI="ACTION_CLOSE_NOTI";
 
     private void showNotification(int id) {
 
@@ -408,7 +408,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         PendingIntent pendingNextIntent = PendingIntent.getBroadcast(this, 102, next, 0);
 
         Intent close = new Intent();
-        next.setAction(ACTION_CLOSE_NOTI);
+        close.setAction(ACTION_CLOSE_NOTI);
         PendingIntent pendingCloseIntent = PendingIntent.getBroadcast(this, 103, close, 0);
 
         if(isPlaying()){
@@ -431,6 +431,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 .setContentText(media.getTitle())
                 .setContentIntent(pendingIntent)
                 .setSmallIcon(R.drawable.ic_album_black_36dp)
+                .setOngoing(true)
                 .build();
 
         foregroundNote.bigContentView = views;
