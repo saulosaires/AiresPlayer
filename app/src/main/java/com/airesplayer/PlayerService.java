@@ -389,6 +389,10 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             }
 
 
+        }else{
+            views.setImageViewResource(R.id.status_bar_album_art,R.drawable.ic_music_note_white_48dp);
+            views.setInt(R.id.status_bar_album_art, "setBackgroundResource", R.color.accent_dark);
+
         }
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -431,7 +435,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 .setContentText(media.getTitle())
                 .setContentIntent(pendingIntent)
                 .setSmallIcon(R.drawable.ic_album_black_36dp)
-                .setOngoing(true)
+               // .setOngoing(true)
                 .build();
 
         foregroundNote.bigContentView = views;

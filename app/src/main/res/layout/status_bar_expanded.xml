@@ -11,7 +11,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
         android:layout_centerVertical="true"
-        android:scaleType="center"
+        android:scaleType="fitXY"
         android:background="@color/accent_dark"
         android:src="@drawable/ic_music_note_white_48dp"/>
 

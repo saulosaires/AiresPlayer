@@ -90,6 +90,12 @@ public class MainActivity extends AppCompatActivity implements SlidingUpPanelLay
     }
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        app.getService().cancelNotification();
+    }
 
     @Override
     public void onPanelSlide(View panel, float slideOffset) {
