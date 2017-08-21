@@ -1,4 +1,4 @@
-package com.airesplayer.spotifyApi;
+package com.airesplayer.lastFmApi;
 
 
 import android.util.Log;
@@ -15,12 +15,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 
+public class LastFmService {
 
-public class SpotifyService {
+    public static final String apiKey="e3ebe97f722ddf42fa2df40d0fcf4148";
+    public static final String sharedSecret="301ef833b502f33a4893ed7bafe22ee2";
 
-     public static final String url="https://api.spotify.com/";
+     public static final String url="http://ws.audioscrobbler.com/2.0/";
 
-     public static final String searchArtist="v1/search";
+     public static final String searchArtist="artist.getinfo";
 
 
      public static void searchArtist(String  name,final CallBack callBack){
@@ -35,12 +37,17 @@ public class SpotifyService {
          StringBuilder mUrl = new StringBuilder(url);
 
          try {
-             mUrl.append(searchArtist).append("?q=").append( URLEncoder.encode(name, "UTF-8")).append("&type=artist");
+             mUrl.append("?method=").append(searchArtist).append("&artist=")
+                                    .append( URLEncoder.encode(name, "UTF-8"))
+                                    .append("&api_key=")
+                                    .append(apiKey)
+                                    .append("&format=json");
+
          } catch (UnsupportedEncodingException e) {
              e.printStackTrace();
          }
 
-         Log.v(SpotifyService.class.getName(), mUrl.toString());
+         Log.v(LastFmService.class.getName(), mUrl.toString());
 
          JsonObjectRequest jsonObjectRequest =
                  new JsonObjectRequest(Request.Method.GET, mUrl.toString(), new Response.Listener<JSONObject>()
@@ -80,7 +87,7 @@ public class SpotifyService {
             e.printStackTrace();
         }
 
-        Log.v(SpotifyService.class.getName(), mUrl.toString());
+        Log.v(LastFmService.class.getName(), mUrl.toString());
 
         JsonObjectRequest jsonObjectRequest =
                 new JsonObjectRequest(Request.Method.GET, mUrl.toString(), new Response.Listener<JSONObject>()
