@@ -1,9 +1,9 @@
-package com.airesplayer.fragment;
+package com.airesplayer.model;
 
 /**
  * Created by saulo on 14/04/2016.
  */
-public interface ItemListTwoLines {
+public interface ItemMedia {
 
     public int getId();
     public String getArtAlbum();

@@ -7,25 +7,20 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 
-import com.airesplayer.dao.ImageDAO;
-import com.airesplayer.fragment.ItemListTwoLines;
+
+import com.airesplayer.model.ItemMedia;
 import com.airesplayer.model.Album;
 import com.airesplayer.model.Artist;
-import com.airesplayer.model.Image;
+
 import com.airesplayer.model.Media;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 
-
-/**
- * Created by Aires on 21/06/2015.
- */
 public class AudioUtils {
 
-    public static List<ItemListTwoLines> getAll(Context context){
+    public static List<ItemMedia> getAll(Context context){
 
 
         Cursor cursor = context.getContentResolver().query(
@@ -43,17 +38,23 @@ public class AudioUtils {
 
 
         Cursor cursor = context.getContentResolver().query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 null,
                 MediaStore.Audio.Media._ID+"="+id,
                 null,
                 MediaStore.Audio.Media.TITLE + " ASC");
 
-        return (Media) parseMedia(context,cursor).get(0);
+        List<ItemMedia> list = parseMedia(context, cursor);
 
+        if(list.size()>0){
+            return (Media) list.get(0);
+        }
+
+
+         return null;
     }
 
-    public static List<ItemListTwoLines> getTracksFromArtist(Context context,int artistId){
+    public static List<ItemMedia> getTracksFromArtist(Context context, int artistId){
 
 
         Cursor cursor = context.getContentResolver().query(
@@ -67,7 +68,7 @@ public class AudioUtils {
 
     }
 
-    public static List<ItemListTwoLines> getTracks(Context context, int albumID){
+    public static List<ItemMedia> getTracks(Context context, int albumID){
 
 
         Cursor cursor = context.getContentResolver().query(
@@ -83,7 +84,7 @@ public class AudioUtils {
 
     }
 
-    public static List<ItemListTwoLines> getArtist(Context context){
+    public static List<ItemMedia> getArtist(Context context){
 
         String[] projection = new String[] {
                 MediaStore.Audio.Artists._ID,
@@ -103,7 +104,7 @@ public class AudioUtils {
                 sortOrder
         );
 
-        List<ItemListTwoLines> list = new ArrayList<ItemListTwoLines>();
+        List<ItemMedia> list = new ArrayList<ItemMedia>();
 
         while (cursor.moveToNext()) {
 
@@ -123,7 +124,7 @@ public class AudioUtils {
 
     }
 
-    public static List<ItemListTwoLines> getAlbuns(Context context){
+    public static List<ItemMedia> getAlbuns(Context context){
 
         String[] projection = new String[] { MediaStore.Audio.Albums._ID,
                                              MediaStore.Audio.Albums.ALBUM,
@@ -142,7 +143,7 @@ public class AudioUtils {
                                     sortOrder
         );
 
-        List<ItemListTwoLines> listAlbum = new ArrayList<ItemListTwoLines>();
+        List<ItemMedia> listAlbum = new ArrayList<ItemMedia>();
 
         while (cursor.moveToNext()) {
 
@@ -193,9 +194,9 @@ public class AudioUtils {
 
     }
 
-    private  static List<ItemListTwoLines> parseMedia(Context context, Cursor cursor){
+    private  static List<ItemMedia> parseMedia(Context context, Cursor cursor){
 
-        List<ItemListTwoLines> listMedia = new ArrayList<>();
+        List<ItemMedia> listMedia = new ArrayList<>();
 
         while (cursor.moveToNext()) {
 
@@ -246,24 +247,56 @@ public class AudioUtils {
 
     }
 
-    public static int updateMedia(Context context,int id,String name,String album,String artist,String track,String year){
+    public static void updateMedia(Context context,int id,String name,String album,String artist,String track,String year){
 
-        ContentValues values = new ContentValues();
-        values.put( MediaStore.Audio.Media.TITLE,name);
-        values.put( MediaStore.Audio.Media.ALBUM,album);
-        values.put( MediaStore.Audio.Media.ARTIST,artist);
-        values.put( MediaStore.Audio.Media.TRACK,track);
-        values.put( MediaStore.Audio.Media.YEAR,year);
+        try {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Audio.Media.TITLE, name);
+            values.put(MediaStore.Audio.Media.ALBUM, album);
+            values.put(MediaStore.Audio.Media.ARTIST, artist);
 
-        int num=context.getContentResolver().update(
-                                             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                                             values,
-                                             MediaStore.Audio.Media._ID+"=?",
-                                             new String[] {String.valueOf(id)}
-                                           );
 
-        return num;
+            if(Utils.isInt(track)){
 
+                int numTrack = Integer.parseInt(track);
+
+                if(numTrack>0){
+                    values.put(MediaStore.Audio.Media.TRACK, numTrack);
+                }else{
+                    values.putNull(MediaStore.Audio.Media.TRACK);
+                }
+
+            }else{
+                values.putNull(MediaStore.Audio.Media.TRACK);
+            }
+
+            if(Utils.isInt(year)){
+
+                int numYear = Integer.parseInt(year);
+
+                if(numYear>0){
+                    values.put(MediaStore.Audio.Media.YEAR, numYear);
+                }else{
+                    values.putNull(MediaStore.Audio.Media.YEAR);
+                }
+
+            }else{
+                values.putNull(MediaStore.Audio.Media.YEAR);
+            }
+
+
+            int num=context.getContentResolver().update(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    values,
+                    MediaStore.Audio.Media._ID + "=?",
+                    new String[]{String.valueOf(id)}
+            );
+
+            System.out.print(num);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public static  int deleteMedia(Context context,int id){

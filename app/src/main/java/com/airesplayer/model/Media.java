@@ -1,11 +1,9 @@
 package com.airesplayer.model;
 
-import com.airesplayer.fragment.ItemListTwoLines;
-
 /**
  * Created by Aires on 23/09/2015.
  */
-public class Media implements ItemListTwoLines {
+public class Media implements ItemMedia {
 
     private String mediaTitle;
     private String path;

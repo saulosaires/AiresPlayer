@@ -1,16 +1,11 @@
 package com.airesplayer.model;
 
-import android.content.ContentValues;
 import android.content.Context;
 
 import com.airesplayer.R;
-import com.airesplayer.fragment.ItemListTwoLines;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
-public class Artist   implements ItemListTwoLines {
+public class Artist   implements ItemMedia {
 
     private int id;
     private String artist;

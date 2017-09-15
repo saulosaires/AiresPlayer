@@ -1,17 +1,12 @@
 package com.airesplayer.fragment;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.graphics.Palette;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -25,21 +20,28 @@ import com.airesplayer.AiresPlayerApp;
 import com.airesplayer.Media;
 import com.airesplayer.R;
 
+import com.airesplayer.lastFmApi.LastFmJsonUtil;
+import com.airesplayer.lastFmApi.LastFmService;
+import com.airesplayer.model.Image;
+import com.airesplayer.model.ItemMedia;
+import com.airesplayer.persistence.ImageDAO;
 import com.airesplayer.util.Utils;
+import com.android.volley.VolleyError;
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
-import java.util.Random;
 
 
 public class AlbumFragment extends Fragment {
 
     private RecyclerView mRecyclerView;
 
-    private List<ItemListTwoLines> listEntity;
+    private List<ItemMedia> listEntity;
 
-    public static AlbumFragment newInstance(List<ItemListTwoLines> listEntity) {
+    public static AlbumFragment newInstance(List<ItemMedia> listEntity) {
 
         AlbumFragment fragment = new AlbumFragment();
         fragment.init(listEntity);
@@ -53,7 +55,7 @@ public class AlbumFragment extends Fragment {
 
     public AlbumFragment() {}
 
-    public void init(List<ItemListTwoLines> listEntity) {
+    public void init(List<ItemMedia> listEntity) {
         this.listEntity=listEntity;
     }
 
@@ -101,9 +103,11 @@ public class AlbumFragment extends Fragment {
 
     public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.ViewHolder>  {
 
-        private List<ItemListTwoLines> listEntity;
+        private List<ItemMedia> listEntity;
 
-        public AlbumAdapter(List<ItemListTwoLines> listEntity) {
+        private ImageDAO dao = new ImageDAO();
+
+        public AlbumAdapter(List<ItemMedia> listEntity) {
             super();
             this.listEntity=listEntity;
 
@@ -122,47 +126,15 @@ public class AlbumFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(final ViewHolder viewHolder, final int i) {
-            final ItemListTwoLines e = listEntity.get(i);
+            final ItemMedia e = listEntity.get(i);
 
-            if(e.getArtAlbum()!=null && !"".equals(e.getArtAlbum())){
-
-
-
-                Picasso.with(getActivity())
-                        .load(new File(e.getArtAlbum()))
-                        .placeholder(R.drawable.ic_music_note_white_48dp)
-                        .into(viewHolder.albumArt,
-                                new com.squareup.picasso.Callback() {
-
-                                    @Override
-                                    public void onSuccess() {
-
-                                       viewHolder.albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
-
-                                       Bitmap bitmap =  ((BitmapDrawable)viewHolder.albumArt.getDrawable()).getBitmap();
-
-                                        Palette palette  = Palette.from(bitmap).generate();
-                                        Palette.Swatch swatch = palette.getVibrantSwatch();
-
-                                        if (swatch != null) {
-                                            viewHolder.warpper.setBackgroundColor(swatch.getRgb());
-
-                                            //viewHolder.title.setBackgroundColor(swatch.getRgb());
-                                            viewHolder.title.setTextColor(swatch.getTitleTextColor());
-
-                                            //viewHolder.subtitle.setBackgroundColor(swatch.getRgb());
-                                            viewHolder.subtitle.setTextColor(swatch.getTitleTextColor());
-
-                                        }
-
-                                    }
-
-                                    @Override
-                                    public void onError() {
-
-                                    }
-                                });
-            }
+            loadImage(viewHolder.albumArt,
+                      viewHolder.title,
+                      viewHolder.subtitle,
+                      viewHolder.warpper,
+                      e.getId(),
+                      e.getSubTitle(),
+                      e.getTitle());
 
 
             viewHolder.title.setText(e.getTitle());
@@ -199,10 +171,6 @@ public class AlbumFragment extends Fragment {
                 }
             });
 
-
-
-
-
         }
 
 
@@ -217,11 +185,116 @@ public class AlbumFragment extends Fragment {
 
         public void handleClick(View v ,int index) {
 
-
-            ((AiresPlayerApp)getActivity().getApplication()).getService().play(index, Media.ALBUM.getTypeMedia());
-
+            ((AiresPlayerApp)getActivity().getApplication()).doInit(index, Media.ALBUM.getTypeMedia(),true);
 
         }
+
+        private void loadImage(final ImageView albumArt,
+                                    final TextView title,
+                                    final TextView subtitle,
+                                    final LinearLayout warpper,
+                                    final int id,
+                                    final String artist,
+                                    final String album){
+
+            Image img=dao.read(id);
+
+            if(img==null || Utils.isEmpty(img.getImageUrl())){
+                loadFromLastFm( albumArt,title,subtitle,warpper,id,artist, album);
+            }else{
+                picassoLoadImage(albumArt,title,subtitle,warpper ,img.getImageUrl());
+            }
+
+        }
+
+        private void loadFromLastFm(final ImageView albumArt,
+                                    final TextView title,
+                                    final TextView subtitle,
+                                    final LinearLayout warpper,
+                                    final int id,
+                                    final String artist,
+                                    final String album){
+
+            LastFmService.CallBack callBack =new LastFmService.CallBack() {
+
+                @Override
+                public void onResponse(JSONObject response) {
+
+                    try {
+
+                        String imageUrl = LastFmJsonUtil.parseSearchAlbum(response);
+
+                        if(!Utils.isEmpty(imageUrl)) {
+
+                            dao.persist(new Image(id,imageUrl));
+                            picassoLoadImage(albumArt,title,subtitle,warpper ,imageUrl);
+
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                @Override
+                public void onErrorResponse(VolleyError error) {
+
+                    System.out.print(error);
+
+                }
+
+            };
+
+
+            LastFmService.searchAlbum(artist,album,callBack);
+
+        }
+
+        private void picassoLoadImage(final ImageView albumArt,
+                                      final TextView title,
+                                      final TextView subtitle,
+                                      final LinearLayout warpper,
+                                      String uri){
+
+            albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
+
+            Picasso.with(getActivity())
+                    .load(uri)
+                    .resize(200, 150)
+                    .into(albumArt,
+                            new com.squareup.picasso.Callback() {
+                                @Override
+                                public void onSuccess() {
+
+
+                                    Bitmap bitmap =  ((BitmapDrawable)albumArt.getDrawable()).getBitmap();
+
+                                    Palette palette  = Palette.from(bitmap).generate();
+                                    Palette.Swatch swatch = palette.getVibrantSwatch();
+
+                                    if (swatch != null) {
+                                        warpper.setBackgroundColor(swatch.getRgb());
+
+                                        //viewHolder.title.setBackgroundColor(swatch.getRgb());
+                                        title.setTextColor(swatch.getTitleTextColor());
+
+                                        //viewHolder.subtitle.setBackgroundColor(swatch.getRgb());
+                                        subtitle.setTextColor(swatch.getTitleTextColor());
+
+                                    }
+
+
+                                }
+
+                                @Override
+                                public void onError() {
+
+                                }
+                            });
+
+        }
+
 
         class ViewHolder extends RecyclerView.ViewHolder{
 

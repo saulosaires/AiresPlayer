@@ -3,7 +3,6 @@ package com.airesplayer.fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -22,24 +21,30 @@ import android.widget.TextView;
 import com.airesplayer.AiresPlayerApp;
 import com.airesplayer.EditTagActivity;
 import com.airesplayer.Media;
-import com.airesplayer.PlayerService;
 import com.airesplayer.R;
 
+import com.airesplayer.lastFmApi.LastFmJsonUtil;
+import com.airesplayer.lastFmApi.LastFmService;
+import com.airesplayer.model.Image;
+import com.airesplayer.model.ItemMedia;
+import com.airesplayer.persistence.ImageDAO;
 import com.airesplayer.util.AudioUtils;
 import com.airesplayer.util.Utils;
+import com.android.volley.VolleyError;
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
 
 
 public class MusicFragment extends Fragment {
 
 
-    private List<ItemListTwoLines> listEntity;
+    private List<ItemMedia> listMusic;
 
-
-    public static MusicFragment newInstance(List<ItemListTwoLines> listEntity) {
+    public static MusicFragment newInstance(List<ItemMedia> listEntity) {
         MusicFragment fragment = new MusicFragment();
 
 
@@ -47,16 +52,17 @@ public class MusicFragment extends Fragment {
         return fragment;
     }
 
-    private void init(List<ItemListTwoLines> listEntity) {
+    private void init(List<ItemMedia> listMusic) {
 
-        this.listEntity=listEntity;
+        this.listMusic = listMusic;
 
     }
 
-    public MusicFragment() {}
+    public MusicFragment() {
+    }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_list, container, false);
     }
 
@@ -67,41 +73,34 @@ public class MusicFragment extends Fragment {
         initList(view);
     }
 
-    private void initList(View view){
+    private void initList(View view) {
 
-        RecyclerView mRecyclerView = (RecyclerView)view.findViewById(R.id.list);
+        RecyclerView mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mRecyclerView.setHasFixedSize(false);
-        mRecyclerView.setAdapter(new ListAdapter(listEntity));
+        mRecyclerView.setAdapter(new ListAdapter(listMusic));
 
     }
 
-    private void reproduceNext(int position){
+    private void reproduceNext(int position) {
 
 
         AiresPlayerApp app = (AiresPlayerApp) getActivity().getApplication();
 
-        app.getService().reproduceNext(listEntity.get(position));
+        app.reproduceNext(position);
     }
 
-    private void addQueue(int position){
 
+    private void editTag(int position) {
 
-        AiresPlayerApp app = (AiresPlayerApp) getActivity().getApplication();
-
-        app.getService().addToQueue(listEntity.get(position));
-    }
-
-    private void editTag(int position){
-
-        int media = listEntity.get(position).getId();
+        int media = listMusic.get(position).getId();
 
         Intent intent = new Intent(getActivity(), EditTagActivity.class);
 
         Bundle b = new Bundle();
 
-        b.putInt("id",media);
+        b.putInt("id", media);
 
         intent.putExtras(b);
 
@@ -109,11 +108,11 @@ public class MusicFragment extends Fragment {
 
     }
 
-    private void deleteMedia(final int position){
+    private void deleteMedia(final int position) {
 
-        final  int media = listEntity.get(position).getId();
-        String title=listEntity.get(position).getTitle();
-        String msg=getResources().getString(R.string.delete)+": "+title;
+        final int media = listMusic.get(position).getId();
+        String title = listMusic.get(position).getTitle();
+        String msg = getResources().getString(R.string.delete) + ": " + title;
 
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -121,8 +120,8 @@ public class MusicFragment extends Fragment {
         builder.setMessage(msg)
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        AudioUtils.deleteMedia(getActivity(),media);
-                        listEntity.remove(position);
+                        AudioUtils.deleteMedia(getActivity(), media);
+                        listMusic.remove(position);
                         initList(getView());
                     }
                 })
@@ -132,41 +131,34 @@ public class MusicFragment extends Fragment {
                     }
                 });
 
-         builder.create().show();
+        builder.create().show();
 
     }
 
-    public class ListAdapter extends RecyclerView.Adapter<ViewHolder>  {
+    public class ListAdapter extends RecyclerView.Adapter<ViewHolder> {
 
-        private List<ItemListTwoLines> listEntity;
+        private List<ItemMedia> listEntity;
+        private ImageDAO dao = new ImageDAO();
 
-        public ListAdapter(List<ItemListTwoLines> listEntity) {
+        public ListAdapter(List<ItemMedia> listEntity) {
             super();
-            this.listEntity=listEntity;
+            this.listEntity = listEntity;
         }
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup view, int i) {
             View v = LayoutInflater.from(view.getContext()).inflate(R.layout.row, view, false);
-            ViewHolder viewHolder = new ViewHolder(v,view.getContext());
+            ViewHolder viewHolder = new ViewHolder(v, view.getContext());
 
 
             return viewHolder;
         }
 
         @Override
-        public void onBindViewHolder( ViewHolder viewHolder,  final int i) {
-            final ItemListTwoLines e = listEntity.get(i);
+        public void onBindViewHolder(ViewHolder viewHolder, final int i) {
+            final ItemMedia e = listEntity.get(i);
 
-            if(e.getArtAlbum()!=null && !"".equals(e.getArtAlbum())){
-
-                viewHolder.albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
-                Picasso.with(getActivity())
-                       .load((e.getArtAlbum()))
-                       .placeholder(R.drawable.ic_music_note_white_24dp)
-                       .into(viewHolder.albumArt);
-
-            }
+            loadImage(viewHolder.albumArt, e.getId(), e.getSubTitle());
 
             viewHolder.title.setText(e.getTitle());
             viewHolder.subtitle.setText(e.getSubTitle());
@@ -174,7 +166,7 @@ public class MusicFragment extends Fragment {
             viewHolder.title.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    handleClick(v,i);
+                    handleClick(v, i);
                 }
             });
 
@@ -182,7 +174,7 @@ public class MusicFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
 
-                    handleClick(v,i);
+                    handleClick(v, i);
 
                 }
             });
@@ -190,7 +182,7 @@ public class MusicFragment extends Fragment {
             viewHolder.card.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    handleClick(v,i);
+                    handleClick(v, i);
                 }
             });
 
@@ -203,16 +195,19 @@ public class MusicFragment extends Fragment {
                         @Override
                         public boolean onMenuItemClick(MenuItem item) {
 
-                            switch(item.getItemId()){
+                            switch (item.getItemId()) {
 
-                                case R.id.reproduce_next:reproduceNext(i);break;
-                                case R.id.add_queue:     addQueue(i);break;
-                                case R.id.add_playlist:break;
-                                case R.id.edit_tag:      editTag(i);break;
-                                case R.id.delete:        deleteMedia(i);break;
+                                case R.id.reproduce_next:
+                                    reproduceNext(i);
+                                    break;
+                                case R.id.edit_tag:
+                                    editTag(i);
+                                    break;
+                                case R.id.delete:
+                                    deleteMedia(i);
+                                    break;
 
                             }
-
 
 
                             return false;
@@ -231,22 +226,85 @@ public class MusicFragment extends Fragment {
         @Override
         public int getItemCount() {
 
-            if(listEntity!=null)
+            if (listEntity != null)
                 return listEntity.size();
 
             return 0;
         }
 
 
-        public void handleClick(View v ,int index) {
+        public void handleClick(View v, int index) {
+
+            ((AiresPlayerApp) getActivity().getApplication()).doInit(index, Media.MUSIC.getTypeMedia(), true);
+
+        }
 
 
-            ((AiresPlayerApp)getActivity().getApplication()).getService().play(index, Media.MUSIC.getTypeMedia());
 
+    private void loadImage(final ImageView albumArt, final int id, final String name) {
+
+
+        Image img = dao.read(id);
+
+        if(img==null || Utils.isEmpty(img.getImageUrl())){
+            loadFromLastFm(albumArt, id, name);
+        } else {
+            picassoLoadImage(albumArt, img.getImageUrl());
+        }
+
+
+    }
+
+    private void loadFromLastFm(final ImageView albumArt, final int id, final String name) {
+
+        LastFmService.CallBack callBack = new LastFmService.CallBack() {
+
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+
+                    String imageUrl = LastFmJsonUtil.parseSearchArtist(response);
+
+                    if (!Utils.isEmpty(imageUrl)) {
+                        dao.persist(new Image(id, imageUrl));
+
+                        picassoLoadImage(albumArt, imageUrl);
+
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
             }
 
-        }
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                System.out.print(error);
+
+            }
+
+        };
+
+
+        LastFmService.searchArtist(name, callBack);
+
+    }
+
+    private void picassoLoadImage(final ImageView albumArt, String uri) {
+
+        albumArt.setScaleType(ImageView.ScaleType.FIT_XY);
+
+        Picasso.with(getActivity())
+                .load(uri)
+                .resize(200, 150)
+                .into(albumArt);
+
+    }
+
+}
 
         class ViewHolder extends RecyclerView.ViewHolder{
 

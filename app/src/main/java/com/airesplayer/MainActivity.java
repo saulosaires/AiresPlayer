@@ -1,9 +1,17 @@
 package com.airesplayer;
 
-import android.net.Uri;
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.widget.NestedScrollView;
+import android.support.v4.app.ActivityCompat;
+
+import android.support.v4.content.ContextCompat;
+
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -12,37 +20,27 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.FrameLayout;
+
 
 import com.airesplayer.fragment.AlbumFragment;
 import com.airesplayer.fragment.ArtistFragment;
 import com.airesplayer.fragment.EmptyFragment;
-import com.airesplayer.fragment.ItemListTwoLines;
 import com.airesplayer.fragment.MusicFragment;
 import com.airesplayer.fragment.PlayerFragment;
 import com.airesplayer.util.AudioUtils;
 import com.airesplayer.util.Utils;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.sothree.slidinguppanel.ScrollableViewHelper;
-import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-
-import java.util.List;
-
-public class MainActivity extends AppCompatActivity implements SlidingUpPanelLayout.PanelSlideListener {
 
 
+
+public class MainActivity extends AppCompatActivity {
+
+
+    private final int REQUEST_CODE_ASK_PERMISSIONS=11;
     private ViewPager mViewPager;
 
     AiresPlayerApp app;
 
-    SlidingUpPanelLayout slidingPanel;
-
+    ServiceReceiver receiver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -52,19 +50,60 @@ public class MainActivity extends AppCompatActivity implements SlidingUpPanelLay
         
         app = (AiresPlayerApp) getApplication();
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        receiver = new ServiceReceiver();
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_CODE_ASK_PERMISSIONS);
+
+            }
+        }else{
+            init();
+        }
+
 
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onDestroy() {
+        super.onDestroy();
 
-        app.init();
+        try {
+            unregisterReceiver(receiver);
+            app.cancelNotification();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    private void init(){
+
+        app.setListMusic(AudioUtils.getAll(this));
+        app.setListAlbum(AudioUtils.getAlbuns(this));
+        app.setListArtist(AudioUtils.getArtist(this));
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(PlayerService.SERVICE_STARTED);
+
+        registerReceiver(receiver, intentFilter);
+
+        app.bindService();
 
 
+    }
+
+    private void initUI(){
 
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(new SectionsPagerAdapter(getSupportFragmentManager()));
@@ -72,59 +111,49 @@ public class MainActivity extends AppCompatActivity implements SlidingUpPanelLay
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
-        slidingPanel = (SlidingUpPanelLayout) findViewById(R.id.slidingPanel);
-
-        slidingPanel.addPanelSlideListener(this);
-
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
 
-        if(app.getListMusic()!=null &&  app.getListMusic().size()>0) {
-            int id =app.getListMusic().get(0).getId();
-            Utils.sendMessenge(this, PlayerService.ACTION_INIT, id + "");
+    @Override
+    public void onRequestPermissionsResult(int requestCode,String permissions[], int[] grantResults) {
+        switch (requestCode) {
+
+            case REQUEST_CODE_ASK_PERMISSIONS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    init();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+    private class ServiceReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            String action = intent.getAction();
+
+            if (action.equals(PlayerService.SERVICE_STARTED)) {
+
+                initUI();
+            }
+
+
         }
 
-    }
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        app.getService().cancelNotification();
-    }
-
-    @Override
-    public void onPanelSlide(View panel, float slideOffset) {
 
     }
-
-    @Override
-    public void onPanelStateChanged(View panel,
-                                    SlidingUpPanelLayout.PanelState previousState,
-                                    SlidingUpPanelLayout.PanelState newState) {
-
-        if(SlidingUpPanelLayout.PanelState.COLLAPSED==newState){
-            Utils.sendMessenge(this, PlayerService.PANEL_STATE_COLLAPSED,  newState.toString());
-        }else if(SlidingUpPanelLayout.PanelState.EXPANDED==newState){
-            Utils.sendMessenge(this, PlayerService.PANEL_STATE_EXPANDED,   newState.toString());
-        }
-
-
-    }
-
-    public SlidingUpPanelLayout.PanelState getSlideState(){
-
-        if(slidingPanel==null)
-            return SlidingUpPanelLayout.PanelState.COLLAPSED;
-
-        return slidingPanel.getPanelState();
-
-    }
-
 
 
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
@@ -195,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements SlidingUpPanelLay
                 return  ArtistFragment.newInstance(app.getListArtist());
             }
         }
+
 
 
 

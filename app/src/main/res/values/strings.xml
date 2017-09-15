@@ -8,8 +8,8 @@
     <string name="albuns">Albuns</string>
     <string name="artist">Artists</string>
 
-    <string name="reproduce">Play nexxt</string>
-    <string name="add_queue">Add to playing queeu</string>
+    <string name="reproduce">Play next</string>
+    <string name="add_queue">Add to playing queue</string>
     <string name="add_playlist">Adicionar à playlist</string>
     <string name="edit_tag">Edit Tags</string>
     <string name="tag_editor">Tag Editor</string>
@@ -17,6 +17,7 @@
     <string name="delete">Delete</string>
     <string name="delete_media">Delete Media</string>
     <string name="empty">No media found :(</string>
+    <string name="play_list">Play List</string>
 
     <string name="name">Name</string>
     <string name="genre">Genre</string>

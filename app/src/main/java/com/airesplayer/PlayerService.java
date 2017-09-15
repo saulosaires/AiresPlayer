@@ -9,42 +9,41 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 
-import android.provider.MediaStore;
 import android.widget.RemoteViews;
 
-import com.airesplayer.fragment.ItemListTwoLines;
+import com.airesplayer.model.ItemMedia;
+import com.airesplayer.lastFmApi.LastFmJsonUtil;
+import com.airesplayer.lastFmApi.LastFmService;
 import com.airesplayer.util.AudioUtils;
 import com.airesplayer.util.Utils;
+import com.android.volley.VolleyError;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.List;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
 
-    public static final String ACTION_PLAY           = "action.PLAY";
-    public static final String ACTION_PAUSE          = "action.PAUSE";
-    public static final String ACTION_INIT           = "action.CONTINUE";
-    public static final String ACTION_COMPLETE       = "action.COMPLETE";
-    public static final String ACTION_PREPARED       = "action.PREPARED";
+    public static final String ACTION_PLAY    = "action.PLAY";
+    public static final String ACTION_COMPLETE= "action.COMPLETE";
 
-    public static final String ACTION_SELECTED       = "action.SELECTED";
-
-    public static final String PANEL_STATE_COLLAPSED = "action.COLLAPSED";
-    public static final String PANEL_STATE_EXPANDED  = "action.EXPANDED";
-
+    public static final String SERVICE_STARTED="SERVICE_STARTED";
 
     public static int currentIndex;
     public static String currentType;
-
-    List<ItemListTwoLines> list;
+    public static String name;
+    List<ItemMedia> list;
 
     private MediaPlayer mediaPlayer;
-
 
     private final IBinder mBinder = new MyBinder();
 
@@ -58,7 +57,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //TODO do something useful
-        return Service.START_NOT_STICKY;
+
+
+        Utils.sendMessenge(getApplicationContext(), SERVICE_STARTED,  null);
+
+        return Service.START_REDELIVER_INTENT;
     }
 
     @Override
@@ -83,70 +86,76 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return mBinder;
     }
 
-    public void init(Integer index, String type){
+    public void doInit(Integer index, String type, boolean autoPlay){
 
+        init(index, type);
 
-        if(index!=null && index>=0 && type!=null){
-
-            int id =getIdByType( index,  type);
-
-            initPlayList(id,  type);
-
-            //path=getPath(id,  type);
-
-            if(Media.MUSIC.getTypeMedia().equals(type))
-                currentIndex=index;
-            else
-                currentIndex=0;
-
-
-
-            currentType=type;
-
-
-
-        }else{
-
-            currentIndex=0;
-            currentType=Media.MUSIC.getTypeMedia();
-
-            AiresPlayerApp app = (AiresPlayerApp) getApplication();
-            list = app.getListMusic();
+        if(autoPlay){
+            play();
         }
 
-        if(list!=null && list.size()>0) {
-            sendMessenge(ACTION_INIT, list.get(currentIndex).getId() + "");
-            showNotification(list.get(currentIndex).getId());
-            //sendMessenge(ACTION_CHANGE_CENTRAL, list.get(currentIndex).getId() + "");
+    }
+
+    private void init(Integer index, String type){
+
+         int id =getIdByType( index,  type);
+
+         if(id>=0){
+             initPlayList(id,  type);
+
+             currentIndex=getCurrentIndex(index,  type);
+
+             currentType=type;
+         }
+
+    }
+
+    private int getCurrentIndex(int index,String type){
+
+        if(type.equals(Media.MUSIC.getTypeMedia())){
+            return index;
         }
+
+        return 0;
     }
 
     public void doContinue(){
 
-        if(mediaPlayer!=null  && mediaPlayer.isPlaying()){
-             pause();
-
+        if(mediaPlayer==null){
+            initPlayer();
+        }else if( mediaPlayer.isPlaying()){
+            mediaPlayer.pause();
         }else{
-
-            if(mediaPlayer==null){
-                initPlayer();
-            }
-
             mediaPlayer.start();
-
-            sendMessenge(ACTION_PLAY,null);
-
         }
+
+        showNotification();
 
     }
 
-    public void play(int index, String type) {
+    public String getName(){
+        return name;
+    }
 
-            init(index,type);
+    public void play() {
 
-            int id = list.get(currentIndex).getId();
+        if(currentIndex> list.size())return;
 
-            play(getPath(id,  type));
+        ItemMedia media = list.get(currentIndex);
+
+        int id = media.getId();
+        name= media.getTitle();
+
+        showNotification();
+
+        play(getPath(id));
+
+    }
+
+    public void play(int index) {
+
+        currentIndex=index;
+        play();
 
     }
 
@@ -169,9 +178,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mediaPlayer.start();
 
             sendMessenge(ACTION_PLAY,null);
-            sendMessenge(ACTION_INIT,list.get(currentIndex).getId()+"");
-            sendMessenge(ACTION_SELECTED,null);
-          //  sendMessenge(ACTION_CHANGE_CENTRAL,list.get(currentIndex).getId()+"");
+
 
         } catch (IOException e) {
 
@@ -182,60 +189,51 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     public int getIndex(int i,int size){
 
+        if(size==0)size=1;
+
         return (size+i) % size;
     }
 
     public void doForward(){
 
-        if(list==null || list.size()==0)return;
+        if(Utils.emptyList(list))return;
 
         int size = list.size()-1;
         currentIndex++;
 
         currentIndex = getIndex(currentIndex,size);
 
-        int id = list.get(currentIndex).getId();
-
-        play(getPath(id,  currentType));
+        play();
 
 
     }
 
     public void doRewind(){
 
-        if(list==null || list.size()==0)return;
+        if(Utils.emptyList(list))return;
 
         int size = list.size()-1;
         currentIndex--;
 
         currentIndex = getIndex(currentIndex,size);
 
-
-        int id = list.get(currentIndex).getId();
-
-        play(getPath(id,  currentType));
+        play();
 
     }
 
-    public void pause() {
-
-        if (mediaPlayer!=null){
-            mediaPlayer.pause();
-        }
-
-        sendMessenge(ACTION_PAUSE,null);
-
+    public int getCurrentIndex(){
+        return currentIndex;
     }
 
-    private void initPlayer(){
+    public void initPlayer(){
 
         AiresPlayerApp app = (AiresPlayerApp) getApplication();
 
         if( app.getListMusic()!=null && app.getListMusic().size()>0){
 
-            play(0,Media.MUSIC.getTypeMedia());
+            init(0, Media.MUSIC.getTypeMedia());
+            play();
 
-            sendMessenge(ACTION_INIT,app.getListMusic().get(0).getId()+"");
         }
 
     }
@@ -267,10 +265,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return mediaPlayer.getCurrentPosition();
     }
 
+
     @Override
-    public void onPrepared(MediaPlayer mp) {
-        sendMessenge(ACTION_PREPARED,mediaPlayer.getDuration()+"");
-    }
+    public void onPrepared(MediaPlayer mp) {}
 
     @Override
     public void onCompletion(MediaPlayer mp) {
@@ -283,13 +280,19 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
         if(Media.MUSIC.getTypeMedia().equals(type)){
 
+            if(Utils.emptyList(app.getListMusic()) || (index > app.getListMusic().size())){return -1;}
+
             return app.getListMusic().get(index).getId();
 
         }else  if(Media.ALBUM.getTypeMedia().equals(type)){
 
+            if(Utils.emptyList(app.getListAlbum()) || (index > app.getListAlbum().size())){return -1;}
+
             return app.getListAlbum().get(index).getId();
 
         }else  if(Media.ARTIST.getTypeMedia().equals(type)){
+
+            if(Utils.emptyList(app.getListArtist()) || (index > app.getListArtist().size())){return -1;}
 
             return app.getListArtist().get(index).getId();
 
@@ -320,40 +323,38 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     }
 
-    private String getPath(int id,String type){
-
-
-        if(Media.MUSIC.getTypeMedia().equals(type)){
+    private String getPath(int id){
 
             return AudioUtils.getMedia(this,id).getPath();
 
-        }else  {
-
-           return  AudioUtils.getMedia(this,list.get(0).getId()).getPath();
-
-        }
-
-
     }
 
-    public List<ItemListTwoLines> getPlayList(){
+    public List<ItemMedia> getPlayList(){
 
         return list;
     }
 
-    public void reproduceNext(ItemListTwoLines item){
+    public void reproduceNext(int position){
 
-        if(( currentIndex+1)<=list.size()){
+        ItemMedia item = list.get(position);
 
-            if(list.get(currentIndex+1).getId()!=item.getId()){
-                list.add(currentIndex+1,item);
-            }
+        if(list.get(currentIndex).getId()==item.getId()){
+         return;
         }
 
-    }
-    public void addToQueue(ItemListTwoLines item){
+        item = list.remove(position);
 
-         list.add(item);
+        if( (currentIndex+1)<list.size() ){
+
+            list.add(currentIndex+1,item);
+        }else{
+
+            list.add(item);
+        }
+
+
+
+
     }
 
     public int getCurrentId(){
@@ -371,29 +372,69 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private final String ACTION_PREV_NOTI="ACTION_PLAY_PREV";
     private final String ACTION_CLOSE_NOTI="ACTION_CLOSE_NOTI";
 
-    private void showNotification(int id) {
+    private void showNotification() {
 
-        com.airesplayer.model.Media media = AudioUtils.getMedia(this, id);
+        if(Utils.emptyList(list) || (currentIndex > list.size()))return;
+
+        int id =list.get(currentIndex).getId();
+
+        final com.airesplayer.model.Media media = AudioUtils.getMedia(this, id);
+
+        if(media==null)return;
+
+        LastFmService.searchArtist(media.getArtist(), new LastFmService.CallBack() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    String imageUrl = LastFmJsonUtil.parseSearchArtist(response);
+
+                    if(Utils.isEmpty(imageUrl)){
+                        showContentNotification( media, null);
+                        return;
+                    }
+
+                    Picasso.with(getApplicationContext())
+                            .load(imageUrl)
+                            .into(new Target() {
+                                @Override
+                                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+                                    showContentNotification( media, bitmap);
+                                }
+
+                                @Override
+                                public void onBitmapFailed(Drawable errorDrawable) {
+                                    showContentNotification( media, null);
+                                }
+
+                                @Override
+                                public void onPrepareLoad(Drawable placeHolderDrawable) {}
+                            });
+
+                } catch (JSONException e) {
+                    showContentNotification( media, null);
+                }
+            }
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+
+    }
+
+    private void showContentNotification(com.airesplayer.model.Media media,Bitmap bitmap){
+
 
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,   PendingIntent.FLAG_UPDATE_CURRENT);
-        RemoteViews views = new RemoteViews(this.getPackageName(), R.layout.status_bar_expanded);
+        final RemoteViews views = new RemoteViews(this.getPackageName(), R.layout.status_bar_expanded);
 
-        if(Utils.uriExist(this,media.getAlbumArt())) {
-
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), Uri.parse(media.getAlbumArt()));
-                views.setImageViewBitmap(R.id.status_bar_album_art,bitmap );
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-        }else{
-            views.setImageViewResource(R.id.status_bar_album_art,R.drawable.ic_music_note_white_48dp);
-            views.setInt(R.id.status_bar_album_art, "setBackgroundResource", R.color.accent_dark);
-
-        }
+        views.setImageViewBitmap(R.id.status_bar_album_art,bitmap );
+        views.setTextViewText(R.id.status_bar_track_name, media.getTitle());
+        views.setTextViewText(R.id.status_bar_artist_name, media.getArtist());
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setAction("ACTION.MAIN_ACTION");
@@ -416,9 +457,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         PendingIntent pendingCloseIntent = PendingIntent.getBroadcast(this, 103, close, 0);
 
         if(isPlaying()){
-            views.setImageViewResource(R.id.status_bar_play,R.drawable.ic_pause_white_36dp);
-        }else{
             views.setImageViewResource(R.id.status_bar_play,R.drawable.ic_play_arrow_white_36dp);
+        }else{
+            views.setImageViewResource(R.id.status_bar_play,R.drawable.ic_pause_white_36dp);
         }
 
         views.setOnClickPendingIntent(R.id.status_bar_play, pendingPlayIntent);
@@ -426,8 +467,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         views.setOnClickPendingIntent(R.id.status_bar_prev, pendingPrevIntent);
         views.setOnClickPendingIntent(R.id.close, pendingCloseIntent);
 
-        views.setTextViewText(R.id.status_bar_track_name, media.getTitle());
-        views.setTextViewText(R.id.status_bar_artist_name, media.getArtist());
+
 
 
         Notification.Builder mNotifyBuilder = new Notification.Builder(this);
@@ -435,7 +475,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 .setContentText(media.getTitle())
                 .setContentIntent(pendingIntent)
                 .setSmallIcon(R.drawable.ic_album_black_36dp)
-               // .setOngoing(true)
+                // .setOngoing(true)
                 .build();
 
         foregroundNote.bigContentView = views;
@@ -445,12 +485,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mNotifyManager.notify(1, foregroundNote);
 
 
+
     }
 
     public void cancelNotification(){
 
         NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotifyManager.cancel(1);
+        mNotifyManager.cancelAll();
 
     }
 
@@ -463,13 +504,14 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
             if(action.equals(ACTION_PLAY_NOTI)){
                 doContinue();
-                showNotification(list.get(currentIndex).getId());
+                sendMessenge(ACTION_PLAY,null);
+                showNotification();
             }else if(action.equals(ACTION_NEXT_NOTI)){
                 doForward();
-                showNotification(list.get(currentIndex).getId());
+                showNotification();
             }else if(action.equals(ACTION_PREV_NOTI)){
                 doRewind();
-                showNotification(list.get(currentIndex).getId());
+                showNotification();
             }else if(action.equals(ACTION_CLOSE_NOTI)){
                 cancelNotification();
             }

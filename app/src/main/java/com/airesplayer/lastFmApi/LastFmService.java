@@ -22,8 +22,8 @@ public class LastFmService {
 
      public static final String url="http://ws.audioscrobbler.com/2.0/";
 
-     public static final String searchArtist="artist.getinfo";
-
+     private static final String searchArtist="artist.getinfo";
+     private static final String searchAlbum="album.getinfo";
 
      public static void searchArtist(String  name,final CallBack callBack){
 
@@ -70,19 +70,27 @@ public class LastFmService {
          AiresPlayerApp.getInstance().addRequest(jsonObjectRequest, searchArtist);
      }
 
-    public static void searchAlbum(String  name,final CallBack callBack){
+    public static void searchAlbum(String  artist,String  album,final CallBack callBack){
 
         if(callBack==null) {
             throw new IllegalArgumentException("callBack cant be null");
         }
-        if(name==null) {
-            throw new IllegalArgumentException("name cant be null");
+        if(artist==null) {
+            throw new IllegalArgumentException("artist cant be null");
+        }
+        if(album==null) {
+            throw new IllegalArgumentException("album cant be null");
         }
 
         StringBuilder mUrl = new StringBuilder(url);
 
         try {
-            mUrl.append(searchArtist).append("?q=").append(URLEncoder.encode(name, "UTF-8")).append("&type=album");
+            mUrl.append("?method=").append(searchAlbum)
+                    .append("&artist=").append( URLEncoder.encode(artist, "UTF-8"))
+                    .append("&album=").append( URLEncoder.encode(album, "UTF-8"))
+                    .append("&api_key=").append(apiKey)
+                    .append("&format=json");
+
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -98,14 +106,14 @@ public class LastFmService {
                         callBack.onResponse(response);
                     }
                 },
-                    new Response.ErrorListener()
-                    {
-                        @Override
-                        public void onErrorResponse(VolleyError error)
+                        new Response.ErrorListener()
                         {
-                            callBack.onErrorResponse(error);
-                        }
-                    });
+                            @Override
+                            public void onErrorResponse(VolleyError error)
+                            {
+                                callBack.onErrorResponse(error);
+                            }
+                        });
 
         AiresPlayerApp.getInstance().addRequest(jsonObjectRequest, searchArtist);
     }

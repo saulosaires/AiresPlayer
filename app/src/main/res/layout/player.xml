@@ -1,68 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout     xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-
-    <android.support.v7.widget.CardView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:id="@+id/top_info"
-
-        android:layout_height="wrap_content">
-
-        <RelativeLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                android:id="@+id/album_art_up"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_alignParentLeft="true"
-                android:layout_margin="16dp"
-                android:layout_centerVertical="true"
-                android:scaleType="fitXY"
-                android:background="@color/accent_dark"
-                android:src="@drawable/ic_music_note_white_24dp"/>
-
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@+id/album_art_up"
-                android:layout_toLeftOf="@+id/play_pause_up"
-                android:paddingTop="20dp"
-                android:textStyle="bold"
-                android:lines="1"
-                android:textSize="16sp"/>
-
-            <TextView
-                android:id="@+id/subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/title"
-                android:lines="1"
-                android:layout_toRightOf="@+id/album_art_up"
-                android:layout_toLeftOf="@+id/play_pause_up"
-                android:paddingBottom="20dp"
-                android:textSize="14sp"/>
-
-            <ImageView
-                android:id="@+id/play_pause_up"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
-                android:layout_alignParentRight="true"
-                android:layout_margin="16dp"
-                android:scaleType="center"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_play_arrow_black_36dp"/>
-
-        </RelativeLayout>
-
-    </android.support.v7.widget.CardView>
 
     <android.support.v7.widget.CardView
         xmlns:android="http://schemas.android.com/apk/res/android"
@@ -82,8 +23,7 @@
                 <RelativeLayout
 
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_height="wrap_content">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -91,24 +31,39 @@
                         android:padding="4dp"
                         android:textColor="@android:color/white"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="left"
+                        android:layout_gravity="start"
                         android:textStyle="bold"
-                        android:text="00:00"
-                        android:textSize="12dp"
+                        android:textSize="12sp"
 
                         android:id="@+id/played"/>
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:gravity="center_horizontal"
+                        android:padding="4dp"
+                        android:textColor="@android:color/white"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:layout_toEndOf="@id/played"
+                        android:layout_toStartOf="@+id/left"
+                        android:id="@+id/songName"
+                        android:layout_alignParentTop="true"
+                        android:layout_centerHorizontal="true"
+                        android:singleLine="true"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="5dp"/>
+
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:gravity="center_horizontal"
                         android:padding="4dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="right"
+                        android:layout_gravity="end"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"
-                        android:text="00:00"
-                        android:textSize="12dp"
+                        android:textSize="12sp"
                         android:id="@+id/left"
                         android:layout_alignParentTop="true"
                         android:layout_alignParentEnd="true" />
@@ -118,69 +73,83 @@
 
                 </RelativeLayout>
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-                <LinearLayout
+             <LinearLayout
+                 android:id="@+id/player_control"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:orientation="horizontal"
+                 android:layout_alignParentTop="true"
+                 android:layout_centerHorizontal="true">
 
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_gravity="center_horizontal|center_vertical">
+                    <ImageButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/rewind"
+                        android:scaleType="center"
+                        android:src="@drawable/ic_skip_previous_white_36dp"
+                        android:background="@android:color/transparent"
+                        android:layout_gravity="center|center_horizontal"/>
 
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/rewind"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_skip_previous_white_36dp"
-                    android:background="@android:color/transparent"
-                    android:layout_gravity="center|center_horizontal"/>
+                    <android.support.design.widget.FloatingActionButton
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:id="@+id/play_pause_down"
+                        android:scaleType="center"
+                        android:src="@drawable/ic_play_arrow_white_36dp"
+                        android:layout_marginLeft="32dp"
+                        android:layout_marginRight="32dp"
 
-                <android.support.design.widget.FloatingActionButton
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:id="@+id/play_pause_down"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_play_arrow_white_36dp"
-                    android:layout_marginLeft="32dp"
-                    android:layout_marginRight="32dp"
-                    app:backgroundTint="@color/accent_dark"
-                    android:elevation="4dp"
+                        app:backgroundTint="@color/accent_dark"
+                        android:elevation="4dp"
 
-                    android:layout_gravity="center|center_horizontal"/>
+                        android:layout_gravity="center|center_horizontal"/>
 
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/forward"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_skip_next_white_36dp"
-                    android:background="@android:color/transparent"
-                    android:layout_gravity="center|center_horizontal"/>
+                    <ImageButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/forward"
+                        android:scaleType="center"
+                        android:src="@drawable/ic_skip_next_white_36dp"
+                        android:background="@android:color/transparent"
+                        android:layout_gravity="center|center_horizontal"/>
+
+
+
 
             </LinearLayout>
 
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/queue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:scaleType="center"
+                    app:fabSize="mini"
+                    android:src="@drawable/ic_queue_music_white_24dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentEnd="true" />
+
+
+            </RelativeLayout>
+
         </LinearLayout>
+
+
+
 
     </android.support.v7.widget.CardView>
 
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/top_info"
-        android:layout_above="@id/warpper_player"
-        android:id="@+id/central"
-        android:background="@android:color/white"/>
-
-
-
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="20dp"
         android:layout_above="@id/warpper_player"
-        android:layout_alignBottom="@id/central"
         android:elevation="5dp"
-        android:layout_marginBottom="-20dp">
+        android:layout_marginBottom="-10dp">
 
         <SeekBar
             android:id="@+id/seek"
@@ -188,8 +157,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="-15dp"
-            android:layout_marginRight="-15dp"
-            />
+            android:layout_marginRight="-15dp"/>
+
     </FrameLayout>
+
 
 </RelativeLayout>

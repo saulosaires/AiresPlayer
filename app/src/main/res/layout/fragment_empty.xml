@@ -4,8 +4,8 @@
                 android:layout_height="match_parent">
 
         <ImageView
-            android:layout_width="150dp"
-            android:layout_height="150dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:id="@+id/logoEmpty"
             android:src="@drawable/ic_thumb_down_black_48dp"
             android:layout_centerVertical="true"
@@ -18,7 +18,7 @@
                   android:id="@+id/msgEmpty"
                   android:layout_below="@+id/logoEmpty"
                   android:layout_centerHorizontal="true"
-                  android:layout_marginTop="33dp"
+                  android:layout_marginTop="20dp"
                   android:text="@string/empty"
                   android:textSize="25dp"
                   android:textColor="@color/accent_dark"

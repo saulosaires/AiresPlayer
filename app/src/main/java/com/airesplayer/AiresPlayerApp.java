@@ -7,29 +7,34 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-import com.airesplayer.fragment.ItemListTwoLines;
+import com.airesplayer.model.ItemMedia;
 import com.airesplayer.util.AudioUtils;
+import com.airesplayer.util.Utils;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.RetryPolicy;
 import com.android.volley.toolbox.Volley;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import io.realm.Realm;
 
 /**
  * Created by Aires on 29/09/2015.
  */
 public class AiresPlayerApp extends Application {
 
-    List<ItemListTwoLines> listMusic;
-    List<ItemListTwoLines> listAlbum;
-    List<ItemListTwoLines> listArtist;
+    List<ItemMedia> listMusic;
+    List<ItemMedia> listAlbum;
+    List<ItemMedia> listArtist;
 
     private static AiresPlayerApp mInstance;
     private RequestQueue mRequestQueue;
 
     PlayerService s;
+
 
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -37,13 +42,15 @@ public class AiresPlayerApp extends Application {
 
             PlayerService.MyBinder b = (PlayerService.MyBinder) binder;
             s = b.getService();
-            s.init(null,null);
+
+
+            s.doInit(0,Media.MUSIC.getTypeMedia(),false);
 
 
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            s = null;
+
         }
     };
 
@@ -57,49 +64,131 @@ public class AiresPlayerApp extends Application {
         super.onCreate();
         mInstance = this;
 
-    }
-
-    public PlayerService getService(){
-        return s;
+        Realm.init(this);
     }
 
 
-    public void init(){
-
-        setListMusic(AudioUtils.getAll(this));
-        setListAlbum(AudioUtils.getAlbuns(this));
-        setListArtist(AudioUtils.getArtist(this));
-
+    public void bindService() {
 
         Intent intent= new Intent(this, PlayerService.class);
+
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
+        startService(intent);
 
     }
 
+    public void cancelNotification(){
+        if(s!=null)s.cancelNotification();
+    }
+
+    public void reproduceNext(int position){
+
+        if(s!=null)
+        s.reproduceNext(position);
+    }
 
 
-    public List<ItemListTwoLines> getListMusic() {
+    public void doInit(Integer index, String type, boolean autoPlay){
+
+        if(s!=null)
+        s.doInit(index, type, autoPlay);
+    }
+
+    public String  getName(){
+
+        if(s==null) return "";
+
+       return  s.getName();
+    }
+
+    public void  play(int index){
+
+        if(s!=null)
+         s.play(index);
+    }
+
+    public int  getCurrentIndex(){
+
+        if(s==null) return 0;
+
+        return s.getCurrentIndex();
+    }
+
+    public List<ItemMedia> getPlayList(){
+
+        if(s==null) return new ArrayList<>();
+
+        return s.getPlayList();
+    }
+
+    public void doRewind() {
+
+        if(s!=null)
+           s.doRewind();
+
+    }
+
+    public void doForward(){
+
+        if(s!=null)
+           s.doForward();
+    }
+
+    public void doContinue(){
+
+        if(s!=null)
+           s.doContinue();
+    }
+
+    public void seekTo(int position){
+
+        if(s!=null)
+         s.seekTo(position);
+    }
+
+    public boolean isPlaying(){
+
+        if(s==null) return false;
+
+        return s.isPlaying();
+    }
+
+    public int getDuration(){
+
+        if(s==null) return 0;
+
+        return s.getDuration();
+    }
+
+    public int getCurrentPosition(){
+
+        if(s==null) return 0;
+
+        return s.getCurrentPosition();
+    }
+
+    public List<ItemMedia> getListMusic() {
         return listMusic;
     }
 
-    public void setListMusic(List<ItemListTwoLines> listMusic) {
+    public void setListMusic(List<ItemMedia> listMusic) {
         this.listMusic = listMusic;
     }
 
-    public List<ItemListTwoLines> getListAlbum() {
+    public List<ItemMedia> getListAlbum() {
         return listAlbum;
     }
 
-    public void setListAlbum(List<ItemListTwoLines> listAlbum) {
+    public void setListAlbum(List<ItemMedia> listAlbum) {
         this.listAlbum = listAlbum;
     }
 
-    public List<ItemListTwoLines> getListArtist() {
+    public List<ItemMedia> getListArtist() {
         return listArtist;
     }
 
-    public void setListArtist(List<ItemListTwoLines> listArtist) {
+    public void setListArtist(List<ItemMedia> listArtist) {
         this.listArtist = listArtist;
     }
 

@@ -19,16 +19,26 @@ import java.util.List;
  */
 public class Utils {
 
-    public static boolean uriExist(Context context,String uri){
+    public static boolean isInt(String str){
 
-        ImageView iv = new ImageView(context);
+        try{
+            Integer.parseInt(str);
 
-        iv.setImageURI(Uri.parse(uri));
-        if(iv.getDrawable() == null){
-          return false;
-        }else{
-           return true;
+            return true;
+        }catch (Exception e){
+            return false;
         }
+
+
+    }
+
+
+    public static boolean isEmpty(String str){
+
+        if(str==null || "".equals(str))return true;
+
+          return false;
+
 
     }
 

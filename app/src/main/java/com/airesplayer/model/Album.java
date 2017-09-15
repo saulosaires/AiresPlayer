@@ -1,14 +1,9 @@
 package com.airesplayer.model;
 
-import android.content.ContentValues;
-
-import com.airesplayer.fragment.ItemListTwoLines;
-
-
 /**
  * Created by Aires on 23/09/2015.
  */
-public class Album  implements ItemListTwoLines {
+public class Album  implements ItemMedia {
 
     private int albumId;
     private String album;
